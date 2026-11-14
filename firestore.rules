@@ -1,0 +1,429 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidDomain(domain) {
+      return domain in ['Angular', 'FastAPI', 'DevOps', 'AWS', 'GCP'];
+    }
+
+    function isValidTier(tier) {
+      return tier in ['Foundational', 'Senior', 'Top 1%'];
+    }
+
+    function isValidPriority(priority) {
+      return priority in ['Critical', 'High', 'Normal'];
+    }
+
+    function userExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) &&
+        get(/databases/$(database)/documents/users/$(userId)).data.userId == request.auth.uid;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && isValidId(data.userId) && data.userId == request.auth.uid &&
+        data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 120 &&
+        data.roleTitle is string && data.roleTitle.size() > 0 && data.roleTitle.size() <= 120 &&
+        data.weeklyHoursTarget is number && data.weeklyHoursTarget >= 1 && data.weeklyHoursTarget <= 60 &&
+        data.calibrated is bool &&
+        data.streakDays is number && data.streakDays >= 0 && data.streakDays <= 10000 &&
+        data.lastActiveDate is string && data.lastActiveDate.size() > 0 && data.lastActiveDate.size() <= 32 &&
+        data.rotationMap is map && data.rotationMap.keys().size() <= 7 &&
+        data.completedRotationDays is list && data.completedRotationDays.size() <= 7 &&
+        (data.completedRotationDays.size() == 0 || data.completedRotationDays[0] is string) &&
+        data.domainFocusMinutes is map && data.domainFocusMinutes.keys().size() <= 5 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSkillNode(data) {
+      return data.userId is string && isValidId(data.userId) && data.userId == request.auth.uid &&
+        data.domain is string && isValidDomain(data.domain) &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 160 &&
+        data.tier is string && isValidTier(data.tier) &&
+        (!data.keys().hasAny(['priority']) || (data.priority is string && isValidPriority(data.priority))) &&
+        (!data.keys().hasAny(['projectTag']) || (data.projectTag is string && data.projectTag.size() <= 80)) &&
+        data.mastery is number && data.mastery >= 0 && data.mastery <= 100 &&
+        data.targetMastery is number && data.targetMastery >= 1 && data.targetMastery <= 100 &&
+        data.description is string && data.description.size() <= 600 &&
+        data.studyBrief is string && data.studyBrief.size() <= 8000 &&
+        data.labPrompt is string && data.labPrompt.size() <= 2000 &&
+        data.practiceCount is number && data.practiceCount >= 0 && data.practiceCount <= 100000 &&
+        data.lastPracticedAt is string && data.lastPracticedAt.size() <= 64 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidWorkLog(data) {
+      return data.userId is string && isValidId(data.userId) && data.userId == request.auth.uid &&
+        data.projectName is string && data.projectName.size() > 0 && data.projectName.size() <= 120 &&
+        data.taskSummary is string && data.taskSummary.size() > 0 && data.taskSummary.size() <= 2500 &&
+        data.primaryDomain is string && isValidDomain(data.primaryDomain) &&
+        data.domains is list && data.domains.size() > 0 && data.domains.size() <= 5 &&
+        data.domains[0] is string &&
+        data.extractedSkills is list && data.extractedSkills.size() <= 10 &&
+        (data.extractedSkills.size() == 0 || data.extractedSkills[0] is string) &&
+        data.elevationNote is string && data.elevationNote.size() <= 3000 &&
+        data.xpAwarded is number && data.xpAwarded >= 0 && data.xpAwarded <= 500 &&
+        data.minutesSpent is number && data.minutesSpent >= 1 && data.minutesSpent <= 1440 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidIncidentDrill(data) {
+      return data.userId is string && isValidId(data.userId) && data.userId == request.auth.uid &&
+        data.domain is string && data.domain.size() > 0 && data.domain.size() <= 40 &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 180 &&
+        data.difficulty is string && data.difficulty in ['Senior', 'Staff', 'Principal'] &&
+        data.scenarioPrompt is string && data.scenarioPrompt.size() > 0 && data.scenarioPrompt.size() <= 4000 &&
+        data.status is string && data.status in ['active', 'completed'] &&
+        data.messages is list && data.messages.size() <= 30 &&
+        (data.messages.size() == 0 || data.messages[0] is map) &&
+        (!data.keys().hasAny(['evaluation']) || data.evaluation is map) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidReviewCard(data) {
+      return data.userId is string && isValidId(data.userId) && data.userId == request.auth.uid &&
+        data.domain is string && isValidDomain(data.domain) &&
+        data.skillTitle is string && data.skillTitle.size() > 0 && data.skillTitle.size() <= 160 &&
+        data.prompt is string && data.prompt.size() > 0 && data.prompt.size() <= 2000 &&
+        data.answer is string && data.answer.size() > 0 && data.answer.size() <= 3000 &&
+        data.explanation is string && data.explanation.size() <= 3000 &&
+        data.easeFactor is number && data.easeFactor >= 1.3 && data.easeFactor <= 5.0 &&
+        data.intervalDays is number && data.intervalDays >= 0 && data.intervalDays <= 3650 &&
+        data.repetitions is number && data.repetitions >= 0 && data.repetitions <= 1000 &&
+        data.nextReviewAt is string && data.nextReviewAt.size() > 0 && data.nextReviewAt.size() <= 64 &&
+        data.lastReviewedAt is string && data.lastReviewedAt.size() <= 64 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAgentSession(data) {
+      return data.userId is string && isValidId(data.userId) && data.userId == request.auth.uid &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 160 &&
+        data.projectContext is string && data.projectContext.size() <= 2000 &&
+        data.messages is list && data.messages.size() <= 30 &&
+        (data.messages.size() == 0 || data.messages[0] is map) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidProjectMission(data) {
+      return data.userId is string && isValidId(data.userId) && data.userId == request.auth.uid &&
+        data.projectName is string && data.projectName.size() > 0 && data.projectName.size() <= 120 &&
+        data.rawTaskBrief is string && data.rawTaskBrief.size() > 0 && data.rawTaskBrief.size() <= 5000 &&
+        data.primaryDomain is string && isValidDomain(data.primaryDomain) &&
+        data.domains is list && data.domains.size() > 0 && data.domains.size() <= 5 && data.domains[0] is string &&
+        data.status is string && data.status in ['active', 'completed'] &&
+        data.rank is string && data.rank in ['C-Rank', 'B-Rank', 'A-Rank', 'S-Rank'] &&
+        data.masteryGoal is string && data.masteryGoal.size() <= 600 &&
+        data.linkedSkillTitles is list && data.linkedSkillTitles.size() <= 12 &&
+        (data.linkedSkillTitles.size() == 0 || data.linkedSkillTitles[0] is string) &&
+        data.masterSyllabusModules is list && data.masterSyllabusModules.size() <= 8 &&
+        (data.masterSyllabusModules.size() == 0 || data.masterSyllabusModules[0] is map) &&
+        data.completedAt is string && data.completedAt.size() <= 64 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidDailyQuest(data) {
+      return data.userId is string && isValidId(data.userId) && data.userId == request.auth.uid &&
+        data.dateKey is string && data.dateKey.size() > 0 && data.dateKey.size() <= 16 &&
+        data.mode is string && data.mode in ['project_override', 'normal_routine'] &&
+        data.projectMissionId is string && data.projectMissionId.size() <= 128 &&
+        data.projectName is string && data.projectName.size() <= 120 &&
+        data.domain is string && isValidDomain(data.domain) &&
+        data.questType is string && data.questType in ['Project Execution', 'Domain Mastery', 'Production Drill', 'Active Recall'] &&
+        data.rank is string && data.rank in ['E-Rank', 'D-Rank', 'C-Rank', 'B-Rank', 'A-Rank', 'S-Rank'] &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 180 &&
+        data.objective is string && data.objective.size() > 0 && data.objective.size() <= 1000 &&
+        data.masteryChecklist is list && data.masteryChecklist.size() <= 6 &&
+        (data.masteryChecklist.size() == 0 || data.masteryChecklist[0] is string) &&
+        data.linkedSkillTitle is string && data.linkedSkillTitle.size() <= 160 &&
+        data.estimatedMinutes is number && data.estimatedMinutes >= 5 && data.estimatedMinutes <= 240 &&
+        data.xpReward is number && data.xpReward >= 10 && data.xpReward <= 300 &&
+        data.status is string && data.status in ['pending', 'completed'] &&
+        data.completedAt is string && data.completedAt.size() <= 64 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+
+      allow create: if isValidId(userId) && isVerified() && isOwner(userId) &&
+        incoming().keys().hasAll([
+          'userId', 'displayName', 'roleTitle', 'weeklyHoursTarget', 'calibrated',
+          'streakDays', 'lastActiveDate', 'rotationMap', 'completedRotationDays',
+          'domainFocusMinutes', 'createdAt', 'updatedAt'
+        ]) &&
+        incoming().keys().hasOnly([
+          'userId', 'displayName', 'roleTitle', 'weeklyHoursTarget', 'calibrated',
+          'streakDays', 'lastActiveDate', 'rotationMap', 'completedRotationDays',
+          'domainFocusMinutes', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidUserProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId) && isVerified() && isOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['calibrated', 'weeklyHoursTarget', 'roleTitle', 'rotationMap', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['completedRotationDays', 'streakDays', 'lastActiveDate', 'domainFocusMinutes', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['rotationMap', 'completedRotationDays', 'domainFocusMinutes', 'updatedAt'])
+        );
+
+      allow delete: if isValidId(userId) && isVerified() && isOwner(userId);
+
+      match /skills/{skillId} {
+        allow get: if isValidId(userId) && isValidId(skillId) && isOwner(userId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) && isValidId(skillId) && isVerified() && isOwner(userId) &&
+          incoming().keys().hasAll([
+            'userId', 'domain', 'title', 'tier', 'mastery', 'targetMastery',
+            'description', 'studyBrief', 'labPrompt', 'practiceCount', 'lastPracticedAt',
+            'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'domain', 'title', 'tier', 'priority', 'projectTag', 'mastery', 'targetMastery',
+            'description', 'studyBrief', 'labPrompt', 'practiceCount', 'lastPracticedAt',
+            'createdAt', 'updatedAt'
+          ]) &&
+          isValidSkillNode(incoming()) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          userExists(userId);
+
+        allow update: if isValidId(userId) && isValidId(skillId) && isVerified() && isOwner(userId) &&
+          isValidSkillNode(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          userExists(userId) && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['mastery', 'practiceCount', 'lastPracticedAt', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['studyBrief', 'labPrompt', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['priority', 'projectTag', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['priority', 'projectTag', 'studyBrief', 'labPrompt', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['tier', 'priority', 'projectTag', 'studyBrief', 'labPrompt', 'updatedAt'])
+          );
+
+        allow delete: if isValidId(userId) && isValidId(skillId) && isVerified() && isOwner(userId) && userExists(userId);
+      }
+
+      match /workLogs/{logId} {
+        allow get: if isValidId(userId) && isValidId(logId) && isOwner(userId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) && isValidId(logId) && isVerified() && isOwner(userId) &&
+          incoming().keys().hasAll([
+            'userId', 'projectName', 'taskSummary', 'primaryDomain', 'domains',
+            'extractedSkills', 'elevationNote', 'xpAwarded', 'minutesSpent', 'createdAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'projectName', 'taskSummary', 'primaryDomain', 'domains',
+            'extractedSkills', 'elevationNote', 'xpAwarded', 'minutesSpent', 'createdAt'
+          ]) &&
+          isValidWorkLog(incoming()) &&
+          incoming().createdAt == request.time &&
+          userExists(userId);
+
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(logId) && isVerified() && isOwner(userId) && userExists(userId);
+      }
+
+      match /drills/{drillId} {
+        allow get: if isValidId(userId) && isValidId(drillId) && isOwner(userId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) && isValidId(drillId) && isVerified() && isOwner(userId) &&
+          incoming().keys().hasAll([
+            'userId', 'domain', 'title', 'difficulty', 'scenarioPrompt',
+            'status', 'messages', 'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'domain', 'title', 'difficulty', 'scenarioPrompt',
+            'status', 'messages', 'evaluation', 'createdAt', 'updatedAt'
+          ]) &&
+          isValidIncidentDrill(incoming()) &&
+          incoming().status == 'active' &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          userExists(userId);
+
+        allow update: if isValidId(userId) && isValidId(drillId) && isVerified() && isOwner(userId) &&
+          isValidIncidentDrill(incoming()) &&
+          existing().status != 'completed' &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          userExists(userId) && (
+            (incoming().status == 'active' && incoming().diff(existing()).affectedKeys().hasOnly(['messages', 'updatedAt'])) ||
+            (incoming().status == 'completed' && incoming().evaluation is map && incoming().diff(existing()).affectedKeys().hasOnly(['messages', 'status', 'evaluation', 'updatedAt']))
+          );
+
+        allow delete: if isValidId(userId) && isValidId(drillId) && isVerified() && isOwner(userId) && userExists(userId);
+      }
+
+      match /reviewCards/{cardId} {
+        allow get: if isValidId(userId) && isValidId(cardId) && isOwner(userId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) && isValidId(cardId) && isVerified() && isOwner(userId) &&
+          incoming().keys().hasAll([
+            'userId', 'domain', 'skillTitle', 'prompt', 'answer', 'explanation',
+            'easeFactor', 'intervalDays', 'repetitions', 'nextReviewAt',
+            'lastReviewedAt', 'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'domain', 'skillTitle', 'prompt', 'answer', 'explanation',
+            'easeFactor', 'intervalDays', 'repetitions', 'nextReviewAt',
+            'lastReviewedAt', 'createdAt', 'updatedAt'
+          ]) &&
+          isValidReviewCard(incoming()) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          userExists(userId);
+
+        allow update: if isValidId(userId) && isValidId(cardId) && isVerified() && isOwner(userId) &&
+          isValidReviewCard(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          userExists(userId) && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['easeFactor', 'intervalDays', 'repetitions', 'nextReviewAt', 'lastReviewedAt', 'updatedAt'])
+          );
+
+        allow delete: if isValidId(userId) && isValidId(cardId) && isVerified() && isOwner(userId) && userExists(userId);
+      }
+
+      match /agentSessions/{sessionId} {
+        allow get: if isValidId(userId) && isValidId(sessionId) && isOwner(userId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) && isValidId(sessionId) && isVerified() && isOwner(userId) &&
+          incoming().keys().hasAll([
+            'userId', 'title', 'projectContext', 'messages', 'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'title', 'projectContext', 'messages', 'createdAt', 'updatedAt'
+          ]) &&
+          isValidAgentSession(incoming()) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          userExists(userId);
+
+        allow update: if isValidId(userId) && isValidId(sessionId) && isVerified() && isOwner(userId) &&
+          isValidAgentSession(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          userExists(userId) && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['title', 'projectContext', 'messages', 'updatedAt'])
+          );
+
+        allow delete: if isValidId(userId) && isValidId(sessionId) && isVerified() && isOwner(userId) && userExists(userId);
+      }
+
+      match /projectMissions/{missionId} {
+        allow get: if isValidId(userId) && isValidId(missionId) && isOwner(userId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) && isValidId(missionId) && isVerified() && isOwner(userId) &&
+          incoming().keys().hasAll([
+            'userId', 'projectName', 'rawTaskBrief', 'primaryDomain', 'domains',
+            'status', 'rank', 'masteryGoal', 'linkedSkillTitles', 'masterSyllabusModules',
+            'completedAt', 'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'projectName', 'rawTaskBrief', 'primaryDomain', 'domains',
+            'status', 'rank', 'masteryGoal', 'linkedSkillTitles', 'masterSyllabusModules',
+            'completedAt', 'createdAt', 'updatedAt'
+          ]) &&
+          isValidProjectMission(incoming()) &&
+          incoming().status == 'active' &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          userExists(userId);
+
+        allow update: if isValidId(userId) && isValidId(missionId) && isVerified() && isOwner(userId) &&
+          isValidProjectMission(incoming()) &&
+          existing().status != 'completed' &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          userExists(userId) && (
+            (incoming().status == 'completed' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'completedAt', 'updatedAt']))
+          );
+
+        allow delete: if isValidId(userId) && isValidId(missionId) && isVerified() && isOwner(userId) && userExists(userId);
+      }
+
+      match /dailyQuests/{questId} {
+        allow get: if isValidId(userId) && isValidId(questId) && isOwner(userId) && existing().userId == request.auth.uid;
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId) && isValidId(questId) && isVerified() && isOwner(userId) &&
+          incoming().keys().hasAll([
+            'userId', 'dateKey', 'mode', 'projectMissionId', 'projectName', 'domain',
+            'questType', 'rank', 'title', 'objective', 'masteryChecklist', 'linkedSkillTitle',
+            'estimatedMinutes', 'xpReward', 'status', 'completedAt', 'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'dateKey', 'mode', 'projectMissionId', 'projectName', 'domain',
+            'questType', 'rank', 'title', 'objective', 'masteryChecklist', 'linkedSkillTitle',
+            'estimatedMinutes', 'xpReward', 'status', 'completedAt', 'createdAt', 'updatedAt'
+          ]) &&
+          isValidDailyQuest(incoming()) &&
+          incoming().status == 'pending' &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          userExists(userId);
+
+        allow update: if isValidId(userId) && isValidId(questId) && isVerified() && isOwner(userId) &&
+          isValidDailyQuest(incoming()) &&
+          existing().status != 'completed' &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          userExists(userId) && (
+            (incoming().status == 'completed' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'completedAt', 'updatedAt']))
+          );
+
+        allow delete: if isValidId(userId) && isValidId(questId) && isVerified() && isOwner(userId) && userExists(userId);
+      }
+    }
+  }
+}

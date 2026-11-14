@@ -1,0 +1,301 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Engineer profile, weekly study budget, balanced rotation schedule, and streak tracking.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "maxLength": 120 },
+        "roleTitle": { "type": "string", "maxLength": 120 },
+        "weeklyHoursTarget": { "type": "number" },
+        "calibrated": { "type": "boolean" },
+        "streakDays": { "type": "number" },
+        "lastActiveDate": { "type": "string", "maxLength": 32 },
+        "rotationMap": { "type": "object" },
+        "completedRotationDays": { "type": "array" },
+        "domainFocusMinutes": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "roleTitle",
+        "weeklyHoursTarget",
+        "calibrated",
+        "streakDays",
+        "lastActiveDate",
+        "rotationMap",
+        "completedRotationDays",
+        "domainFocusMinutes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SkillNode": {
+      "title": "SkillNode",
+      "description": "Individual competency node within one of the 5 core engineering domains.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "domain": { "type": "string", "enum": ["Angular", "FastAPI", "DevOps", "AWS", "GCP"] },
+        "title": { "type": "string", "maxLength": 160 },
+        "tier": { "type": "string", "enum": ["Foundational", "Senior", "Top 1%"] },
+        "priority": { "type": "string", "enum": ["Critical", "High", "Normal"] },
+        "projectTag": { "type": "string", "maxLength": 80 },
+        "mastery": { "type": "number" },
+        "targetMastery": { "type": "number" },
+        "description": { "type": "string", "maxLength": 600 },
+        "studyBrief": { "type": "string", "maxLength": 8000 },
+        "labPrompt": { "type": "string", "maxLength": 2000 },
+        "practiceCount": { "type": "number" },
+        "lastPracticedAt": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId",
+        "domain",
+        "title",
+        "tier",
+        "mastery",
+        "targetMastery",
+        "description",
+        "studyBrief",
+        "labPrompt",
+        "practiceCount",
+        "lastPracticedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WorkLog": {
+      "title": "WorkLog",
+      "description": "Work ticket or project task mapped by AI into domain competencies and Staff-level elevation advice.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "projectName": { "type": "string", "maxLength": 120 },
+        "taskSummary": { "type": "string", "maxLength": 2500 },
+        "primaryDomain": { "type": "string", "enum": ["Angular", "FastAPI", "DevOps", "AWS", "GCP"] },
+        "domains": { "type": "array" },
+        "extractedSkills": { "type": "array" },
+        "elevationNote": { "type": "string", "maxLength": 3000 },
+        "xpAwarded": { "type": "number" },
+        "minutesSpent": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId",
+        "projectName",
+        "taskSummary",
+        "primaryDomain",
+        "domains",
+        "extractedSkills",
+        "elevationNote",
+        "xpAwarded",
+        "minutesSpent",
+        "createdAt"
+      ]
+    },
+    "IncidentDrill": {
+      "title": "IncidentDrill",
+      "description": "Multi-turn Staff-level architecture or production incident drill session.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "domain": { "type": "string", "maxLength": 40 },
+        "title": { "type": "string", "maxLength": 180 },
+        "difficulty": { "type": "string", "enum": ["Senior", "Staff", "Principal"] },
+        "scenarioPrompt": { "type": "string", "maxLength": 4000 },
+        "status": { "type": "string", "enum": ["active", "completed"] },
+        "messages": { "type": "array" },
+        "evaluation": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId",
+        "domain",
+        "title",
+        "difficulty",
+        "scenarioPrompt",
+        "status",
+        "messages",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ReviewCard": {
+      "title": "ReviewCard",
+      "description": "SM-2 spaced-repetition concept or code scenario card.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "domain": { "type": "string", "enum": ["Angular", "FastAPI", "DevOps", "AWS", "GCP"] },
+        "skillTitle": { "type": "string", "maxLength": 160 },
+        "prompt": { "type": "string", "maxLength": 2000 },
+        "answer": { "type": "string", "maxLength": 3000 },
+        "explanation": { "type": "string", "maxLength": 3000 },
+        "easeFactor": { "type": "number" },
+        "intervalDays": { "type": "number" },
+        "repetitions": { "type": "number" },
+        "nextReviewAt": { "type": "string", "maxLength": 64 },
+        "lastReviewedAt": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId",
+        "domain",
+        "skillTitle",
+        "prompt",
+        "answer",
+        "explanation",
+        "easeFactor",
+        "intervalDays",
+        "repetitions",
+        "nextReviewAt",
+        "lastReviewedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AgentSession": {
+      "title": "AgentSession",
+      "description": "Persisted conversational session with the Intelligent Learning Progress and Syllabus Adaptation Agent.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "maxLength": 160 },
+        "projectContext": { "type": "string", "maxLength": 2000 },
+        "messages": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId",
+        "title",
+        "projectContext",
+        "messages",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ProjectMission": {
+      "title": "ProjectMission",
+      "description": "Uploaded project task brief that overrides syllabus priority and structures a Master Syllabus for that domain until completed.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "projectName": { "type": "string", "maxLength": 120 },
+        "rawTaskBrief": { "type": "string", "maxLength": 5000 },
+        "primaryDomain": { "type": "string", "enum": ["Angular", "FastAPI", "DevOps", "AWS", "GCP"] },
+        "domains": { "type": "array" },
+        "status": { "type": "string", "enum": ["active", "completed"] },
+        "rank": { "type": "string", "enum": ["C-Rank", "B-Rank", "A-Rank", "S-Rank"] },
+        "masteryGoal": { "type": "string", "maxLength": 600 },
+        "linkedSkillTitles": { "type": "array" },
+        "masterSyllabusModules": { "type": "array" },
+        "completedAt": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId",
+        "projectName",
+        "rawTaskBrief",
+        "primaryDomain",
+        "domains",
+        "status",
+        "rank",
+        "masteryGoal",
+        "linkedSkillTitles",
+        "masterSyllabusModules",
+        "completedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DailyQuest": {
+      "title": "DailyQuest",
+      "description": "Solo Leveling-inspired daily quest assigned automatically based on active ProjectMission override or Normal Routine rotation.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "dateKey": { "type": "string", "maxLength": 16 },
+        "mode": { "type": "string", "enum": ["project_override", "normal_routine"] },
+        "projectMissionId": { "type": "string", "maxLength": 128 },
+        "projectName": { "type": "string", "maxLength": 120 },
+        "domain": { "type": "string", "enum": ["Angular", "FastAPI", "DevOps", "AWS", "GCP"] },
+        "questType": { "type": "string", "enum": ["Project Execution", "Domain Mastery", "Production Drill", "Active Recall"] },
+        "rank": { "type": "string", "enum": ["E-Rank", "D-Rank", "C-Rank", "B-Rank", "A-Rank", "S-Rank"] },
+        "title": { "type": "string", "maxLength": 180 },
+        "objective": { "type": "string", "maxLength": 1000 },
+        "masteryChecklist": { "type": "array" },
+        "linkedSkillTitle": { "type": "string", "maxLength": 160 },
+        "estimatedMinutes": { "type": "number" },
+        "xpReward": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "completedAt": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId",
+        "dateKey",
+        "mode",
+        "projectMissionId",
+        "projectName",
+        "domain",
+        "questType",
+        "rank",
+        "title",
+        "objective",
+        "masteryChecklist",
+        "linkedSkillTitle",
+        "estimatedMinutes",
+        "xpReward",
+        "status",
+        "completedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Per-user profile, weekly rotation, and calibration settings."
+    },
+    "/users/{userId}/skills/{skillId}": {
+      "schema": { "$ref": "#/entities/SkillNode" },
+      "description": "User's 5-domain Top 1% competency tree nodes."
+    },
+    "/users/{userId}/workLogs/{logId}": {
+      "schema": { "$ref": "#/entities/WorkLog" },
+      "description": "Work project tasks mapped to domain skills."
+    },
+    "/users/{userId}/drills/{drillId}": {
+      "schema": { "$ref": "#/entities/IncidentDrill" },
+      "description": "Interactive Staff-level architecture and incident simulations."
+    },
+    "/users/{userId}/reviewCards/{cardId}": {
+      "schema": { "$ref": "#/entities/ReviewCard" },
+      "description": "SM-2 spaced-repetition queue cards."
+    },
+    "/users/{userId}/agentSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/AgentSession" },
+      "description": "Persisted Syllabus & Progress Agent conversations and applied plans."
+    },
+    "/users/{userId}/projectMissions/{missionId}": {
+      "schema": { "$ref": "#/entities/ProjectMission" },
+      "description": "Uploaded project tasks that temporarily prioritize a domain and auto-adapt the syllabus."
+    },
+    "/users/{userId}/dailyQuests/{questId}": {
+      "schema": { "$ref": "#/entities/DailyQuest" },
+      "description": "Daily automatically generated mastery and project execution quests."
+    }
+  }
+}
